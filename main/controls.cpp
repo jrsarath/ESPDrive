@@ -1,0 +1,44 @@
+#include "includes/controls.hpp"
+#include "includes/motor.hpp"
+#include "includes/servo.hpp"
+#include "includes/led_status.hpp"
+#include "esp_err.h"
+
+extern Motor gMotor;
+extern Servo gServo;
+
+esp_err_t forward() {
+    // led_status_blink(0, 255, 0, 3, 500);
+    set_vehicle_lights(NORMAL);
+    gMotor.forward(200);
+    return ESP_OK;
+}
+esp_err_t reverse() {
+    // led_status_blink(255, 255, 255, 3, 500);
+    set_vehicle_lights(REVERSING);
+    gMotor.reverse(200);
+    return ESP_OK;
+}
+esp_err_t stop() {
+    // led_status_blink(255, 0, 0, 3, 500);
+    set_vehicle_lights(BRAKING);
+    gMotor.stop();
+    return ESP_OK;
+}
+esp_err_t left() {
+    // led_status_blink(255, 255, 0, 3, 500);
+    set_vehicle_lights(STEERING_LEFT);
+    gServo.writeAngle(30);
+    return ESP_OK;
+}
+esp_err_t right() {
+    // led_status_blink(255, 255, 0, 3, 500);
+    set_vehicle_lights(STEERING_RIGHT);
+    gServo.writeAngle(150);
+    return ESP_OK;
+}
+esp_err_t center() {
+    set_vehicle_lights(NORMAL);
+    gServo.writeAngle(90);
+    return ESP_OK;
+}
