@@ -77,6 +77,7 @@ idf.py flash
 - [ESP-IDF Docs](https://docs.espressif.com/projects/esp-idf/en/latest/)
 - [Vite](https://vitejs.dev/)
 - [React](https://react.dev/)
+- [Shadcn UI](https://ui.shadcn.com)
 
 ## 🔩 Hardware Used
 - **N20 motor**
@@ -93,6 +94,6 @@ idf.py flash
 
 ## 🏁 License & Credits
 - MIT License
-- Created by [Your Name] and contributors
+- Created by *Sarath "Delta" Singh* and contributors
   
 Made in Kolkata with ❤️
