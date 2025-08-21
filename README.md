@@ -78,6 +78,16 @@ idf.py flash
 - [Vite](https://vitejs.dev/)
 - [React](https://react.dev/)
 
+## 🔩 Hardware Used
+- **N20 motor**
+- **Mini servo**
+- **ESP32-C6 mini**
+- **WS2812B LED strip**
+- **3.7V to 5V buck boost converter**
+- **1000mAh LiPo battery**
+- **TB6612FNG motor driver**
+- **TP4056 USB-C LiPo charger**
+
 ## Credits
 - [esp-idf](https://github.com/espressif/esp-idf)
 
@@ -85,4 +95,4 @@ idf.py flash
 - MIT License
 - Created by [Your Name] and contributors
   
-Made in Kolkata with ❤️ 
+Made in Kolkata with ❤️
