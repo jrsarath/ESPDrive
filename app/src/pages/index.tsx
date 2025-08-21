@@ -150,14 +150,14 @@ const Index = () => {
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${
               isConnected
-                ? "text-primary border-primary/30 bg-primary/10"
+                ? "text-green-500 border-green-500/30 bg-green-500/10"
                 : "text-destructive border-destructive/30 bg-destructive/10"
             }`}
             aria-live="polite"
           >
             <span
               className={`inline-block size-2 rounded-full ${
-                isConnected ? "bg-primary" : "bg-destructive"
+                isConnected ? "bg-green-500" : "bg-destructive"
               }`}
             />
             {status}
@@ -168,7 +168,7 @@ const Index = () => {
       <main className="flex flex-col px-6 py-10 grow">
         <div className="flex flex-col grow space-y-6">
           {/* Connection Panel */}
-          <section>
+          <section className="hidden">
             <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm">
               <CardContent className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ const Index = () => {
                   {/* Central Joystick */}
                   <div className="animate-enter">
                     <Joystick
-                      size={220}
+                      size={250}
                       onChange={handleJoystickChange}
                     />
                   </div>

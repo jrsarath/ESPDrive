@@ -125,7 +125,7 @@ export const Joystick: React.FC<JoystickProps> = ({ onChange, onRelease, size = 
           className={cn(
             "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
             "size-14 rounded-full",
-            "bg-primary bg-linear-to-br from-violet-500 to-violet-800 shadow-violet-500/50 ring-violet-900",
+            "bg-primary bg-linear-to-br from-primary-500 to-primary-800 shadow-primary-500/50 ring-primary-900",
             "border border-border",
             "shadow-lg",
             "transition-transform duration-50 will-change-transform",
