@@ -1,35 +1,88 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+# ESPDrive
+**A feature-packed, hackable, and fun ESP32-based RC car platform!**
 
-# _Sample project_
+## ✨ Features
+- **Multi-protocol control:**
+  - Bluetooth Low Energy (BLE)
+  - WiFi/WebSocket (browser-based UI)
+  - Xbox controller support
+- **Interactive LED system:**
+  - Turn signals
+  - Reverse indication
+  - Sport mode lighting
+- **Real-time controls:**
+  - Joystick steering & throttle
+  - Headlights & horn
+  - Speed control
+- **Modern web dashboard:**
+  - Installable PWA (Progressive Web App)
+  - Responsive React/Vite frontend
+  - Live status indicators
+- **ESP-IDF powered:**
+  - Reliable, extensible firmware
+  - Easy to add new features
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This is the simplest buildable example. The example is used by command `idf.py create-project`
-that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
+## 🚀 Getting Started
 
+### 1. Prerequisites
+- **Hardware:**
+  - ESP32, ESP32-C3, ESP32-C6, or compatible board
+  - Motor driver, servo, LEDs, and power supply
+- **Software:**
+  - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) (v4.4+ recommended)
+  - [Node.js](https://nodejs.org/) & [Yarn](https://yarnpkg.com/) for frontend
 
-
-## How to use example
-We encourage the users to use the example as a template for the new projects.
-A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
-
-## Example folder contents
-
-The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
-files that provide set of directives and instructions describing the project's source files and targets
-(executable, library, or both). 
-
-Below is short explanation of remaining files in the project folder.
-
+### 2. Clone the Project
+```sh
+git clone https://github.com/yourusername/ESPDrive.git
+cd ESPDrive
 ```
-├── CMakeLists.txt
-├── main
-│   ├── CMakeLists.txt
-│   └── main.c
-└── README.md                  This is the file you are currently reading
+
+### 3. Build the Frontend
+```sh
+cd app
+yarn install
+yarn build
 ```
-Additionally, the sample project contains Makefile and component.mk files, used for the legacy Make based build system. 
-They are not used or needed when building with CMake and idf.py.
+
+### 4. Build & Flash the Firmware
+```sh
+cd ..
+idf.py set-target esp32 # or your chip (esp32c3, etc)
+idf.py build
+idf.py flash
+```
+
+### 5. Connect & Drive!
+- **WiFi:** Connect to the ESP32 AP, open the web dashboard in your browser.
+- **Bluetooth:** Pair with your phone or Xbox controller.
+- **WebSocket:** Use the web app for real-time control.
+
+## 🛠️ Project Structure
+```
+├── app/           # Vite/React frontend (web app)
+├── main/          # ESP-IDF firmware (C++ source)
+├── partitions.csv # Partition table
+├── README.md      # This file
+└── ...            # Other config and build files
+```
+
+## 💡 Customization & Hacking
+- Add new LED patterns, sensors, or control modes in `main/`
+- Tweak the web dashboard UI in `app/src/pages/`
+- Integrate with other controllers or automation systems
+
+## 📚 Resources
+- [ESP-IDF Docs](https://docs.espressif.com/projects/esp-idf/en/latest/)
+- [Vite](https://vitejs.dev/)
+- [React](https://react.dev/)
+
+## Credits
+- [esp-idf](https://github.com/espressif/esp-idf)
+
+## 🏁 License & Credits
+- MIT License
+- Created by [Your Name] and contributors
+  
+Made in Kolkata with ❤️ 
