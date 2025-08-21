@@ -4,11 +4,13 @@
 #include "esp_spiffs.h"
 #include "esp_vfs.h"
 #include "esp_log.h"
+#include "cJSON.h"
 #include <string>
 
 static const char* TAG = "web_server";
 
 static httpd_handle_t server = nullptr;
+static int client_session_id;
 
 static esp_err_t static_get_handler(httpd_req_t *req) {
     // Mount SPIFFS
@@ -59,13 +61,94 @@ static esp_err_t static_get_handler(httpd_req_t *req) {
     esp_vfs_spiffs_unregister(NULL);
     return ESP_OK;
 }
+static esp_err_t ws_handler(httpd_req_t *req) {
+    if (req->method == HTTP_GET) {
+        // Client is connecting
+        ESP_LOGI(TAG, "WebSocket client connected");
+        return ESP_OK;
+    }
+
+    client_session_id = httpd_req_to_sockfd(req);
+
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    ws_pkt.payload = (uint8_t*)malloc(WS_MAX_SIZE);
+    if (!ws_pkt.payload) {
+        ESP_LOGE(TAG, "WS: malloc failed");
+        return ESP_ERR_NO_MEM;
+    }
+    if (httpd_ws_recv_frame(req, &ws_pkt, WS_MAX_SIZE) != ESP_OK) {
+        ESP_LOGE(TAG, "WS: recv_frame failed");
+        free(ws_pkt.payload);
+        return ESP_FAIL;
+    }
+
+    cJSON *payload = cJSON_ParseWithLength((char *)ws_pkt.payload, ws_pkt.len);
+    if (!payload) {
+        ESP_LOGE(TAG, "WS: cJSON_ParseWithLength failed");
+        free(ws_pkt.payload);
+        return ESP_FAIL;
+    }
+    cJSON *typeItem = cJSON_GetObjectItem(payload, "type");
+    cJSON *commandItem = cJSON_GetObjectItem(payload, "command");
+    cJSON *valueItem = cJSON_GetObjectItem(payload, "value");
+
+    if (!typeItem || !commandItem || !cJSON_IsString(typeItem) || !cJSON_IsString(commandItem)) {
+        ESP_LOGE(TAG, "WS: JSON missing 'type' or 'command' string");
+        cJSON_Delete(payload);
+        free(ws_pkt.payload);
+        return ESP_FAIL;
+    }
+    const char *type = typeItem->valuestring;
+    const char *command = commandItem->valuestring;
+    int value = 200;
+    if (valueItem && cJSON_IsNumber(valueItem)) {
+        value = valueItem->valueint;
+    }
+
+    ESP_LOGI(TAG, "WS: type: %s, command: %s, value: %d", type, command, value);
+
+    // Bind actions to commands with value
+    if (strcmp(command, "fwd") == 0) {
+        forward(value);
+    } else if (strcmp(command, "rev") == 0) {
+        reverse(value);
+    } else if (strcmp(command, "left") == 0) {
+        left();
+    } else if (strcmp(command, "right") == 0) {
+        right();
+    } else if (strcmp(command, "center") == 0) {
+        center();
+    } else if (strcmp(command, "stop") == 0) {
+        stop();
+    }
+
+    cJSON_Delete(payload);
+    free(ws_pkt.payload);
+
+    const char *responsestr = "OK";
+    httpd_ws_frame_t ws_responce = {
+        .final = true,
+        .fragmented = false,
+        .type = HTTPD_WS_TYPE_TEXT,
+        .payload = (uint8_t*)responsestr,
+        .len = strlen(responsestr)};
+    esp_err_t send_result = httpd_ws_send_frame(req, &ws_responce);
+    if (send_result != ESP_OK) {
+        ESP_LOGE(TAG, "WS: send_frame failed");
+    }
+
+    return send_result;
+}
 static esp_err_t fwd_handler(httpd_req_t *req) {
-    forward();
+    forward(255);
     httpd_resp_send(req, "Forward", HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 static esp_err_t rev_handler(httpd_req_t *req) {
-    reverse();
+    reverse(255);
     httpd_resp_send(req, "Reverse", HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
@@ -110,6 +193,14 @@ void start_webserver() {
         httpd_register_uri_handler(server, &right_uri);
         httpd_register_uri_handler(server, &center_uri);
 
+        // WebSocket endpoint
+        httpd_uri_t ws_uri = {
+            .uri = "/ws",
+            .method = HTTP_GET,
+            .handler = ws_handler,
+            .is_websocket = true
+        };
+        httpd_register_uri_handler(server, &ws_uri);
         // Static file handler for all GET requests
         httpd_uri_t static_uri = {
             .uri = "/*",
@@ -118,7 +209,7 @@ void start_webserver() {
             .user_ctx = nullptr
         };
         httpd_register_uri_handler(server, &static_uri);
-        
+
         ESP_LOGI(TAG, "HTTP Server started");
     } else {
         ESP_LOGE(TAG, "Failed to start server");

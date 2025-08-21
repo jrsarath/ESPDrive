@@ -134,9 +134,6 @@ export const Joystick: React.FC<JoystickProps> = ({ onChange, onRelease, size = 
           style={handleStyle}
         />
       </div>
-      <div className="mt-2 text-center text-xs text-muted-foreground">
-        x: {pos.x.toFixed(2)} • y: {(-pos.y).toFixed(2)}
-      </div>
     </div>
   );
 };

@@ -41,22 +41,6 @@ extern "C" void app_main(void) {
     };
     esp_vfs_spiffs_register(&conf);
 
-    DIR* dir = opendir("/spiffs");
-    if (dir == NULL) {
-        return;
-    }
-
-    while (true) {
-        struct dirent* de = readdir(dir);
-        if (!de) {
-            break;
-        }
-        
-        printf("Found file: %s\n", de->d_name);
-    }
-
-    closedir(dir);
-
     // Initialize external 4 LED strip
     external_strip_init(NEOPIXEL_PIN, 4);
     create_amber_blink_task();

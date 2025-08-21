@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Bluetooth, Lightbulb, Volume2, Power } from "lucide-react";
+import { Bluetooth, Lightbulb, Volume2, Power, Wifi } from "lucide-react";
 import Joystick from "@/components/controls/JoyStick";
 import { createBluetoothTransport, Transport } from "@/lib/transport";
 import { toast } from "sonner";
+import { WEBSOCKET_URL } from "@/constants";
 
 const Index = () => {
   const lastCmdRef = useRef<{ throttle: number; steering: number }>({ throttle: 0, steering: 0 });
 
+  const [ws, setWs] = useState<WebSocket | null>(null);
   const [transport, setTransport] = useState<Transport | null>(null);
+  const [connectionMode, setConnectionMode] = useState<"websocket" | "bluetooth">("websocket");
   const [status, setStatus] = useState("Disconnected");
   const [headlights, setHeadlights] = useState(false);
   const [horn, setHorn] = useState(false);
@@ -20,10 +22,63 @@ const Index = () => {
   const isConnected = status === "Connected";
 
   useEffect(() => {
-    document.title = "ESP Drive – Sport Mode";
+    document.title = "ESPDrive – Sport Mode";
+
+    let reconnectTimer: NodeJS.Timeout | null = null;
+    let socket: WebSocket | null = null;
+
+    const connect = () => {
+      socket = new WebSocket(WEBSOCKET_URL);
+
+      socket.onopen = () => {
+        setConnectionMode("websocket");
+        setStatus("Connected");
+        setWs(socket);
+        toast("WebSocket Connected");
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+      };
+
+      socket.onclose = () => {
+        setStatus("Disconnected");
+        setWs(null);
+        toast("WebSocket Disconnected");
+        scheduleReconnect();
+      };
+
+      socket.onerror = () => {
+        setStatus("Disconnected");
+        setWs(null);
+        toast.error("WebSocket Error");
+        socket?.close(); // force close to trigger onclose → reconnect
+      };
+
+      socket.onmessage = (event) => {
+        console.log(event.data);
+        // handle messages here
+      };
+    };
+
+    const scheduleReconnect = () => {
+      if (!reconnectTimer) {
+        reconnectTimer = setTimeout(() => {
+          console.log("Reconnecting WebSocket...");
+          connect();
+        }, 3000); // retry after 3s
+      }
+    };
+
+    connect();
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      socket?.close();
+    };
   }, []);
-  // Send commands at 20Hz
   useEffect(() => {
+    // Send commands at 20Hz
     const interval = setInterval(() => {
       if (!transport?.connected) return;
       const { throttle, steering } = lastCmdRef.current;
@@ -32,7 +87,7 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [transport, headlights, horn]);
 
-  const connectBluetooth = async () => {
+  const connect = async () => {
     try {
       const t = createBluetoothTransport(setStatus);
       await t.connect();
@@ -52,6 +107,34 @@ const Index = () => {
       toast("Disconnected", { description: "Device disconnected" });
     } catch {}
   };
+  const sendControlCommand = (cmd: string) => {
+    if (connectionMode === "websocket" && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "control", command: cmd }));
+    } else if (connectionMode === "bluetooth" && transport?.connected) {
+      // You can expand this for actual command structure
+      transport.send({ throttle: 0, steering: 0, headlights, horn });
+    }
+  };
+  const handleJoystickChange = ({ x, y }: { x: number; y: number }) => {
+    const s = Math.max(-1, Math.min(1, x));
+    const t = Math.max(-1, Math.min(1, -y));
+    setSteering(s);
+    setThrottle(t);
+    lastCmdRef.current.steering = s;
+    lastCmdRef.current.throttle = t;
+
+    // Decide command
+    let throttleCmd = "stop";
+    if (t > 0.3) throttleCmd = "fwd";
+    else if (t < -0.3) throttleCmd = "rev";
+
+    let steeringCmd = "center";
+    if (s > 0.3) steeringCmd = "right";
+    else if (s < -0.3) steeringCmd = "left";
+
+    sendControlCommand(throttleCmd);
+    sendControlCommand(steeringCmd);
+  };
 
 
   return (
@@ -60,11 +143,10 @@ const Index = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
-              RC Controller
+              ESPDrive
             </h1>
             <p className="text-sm text-muted-foreground">Sport mode</p>
           </div>
-
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${
               isConnected
@@ -91,15 +173,16 @@ const Index = () => {
               <CardContent className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10">
-                    <Bluetooth className="w-5 h-5 text-primary" />
+                    {connectionMode === "bluetooth" && <Bluetooth className="w-5 h-5 text-primary" />}
+                    {connectionMode === "websocket" && <Wifi className="w-5 h-5 text-primary" />}
                   </div>
                   <div>
-                    <h2 className="font-semibold leading-none">Bluetooth Connection</h2>
-                    <p className="text-sm text-muted-foreground">Connect to your RC device</p>
+                    <h2 className="font-semibold leading-none capitalize">{connectionMode} Connection</h2>
+                    <p className="text-sm text-muted-foreground">{isConnected ? 'Connected' : 'Connect'} to your RC device</p>
                   </div>
                 </div>
                 {!isConnected ? (
-                  <Button onClick={connectBluetooth} className="gap-2">
+                  <Button onClick={connect} className="gap-2">
                     <Power className="w-4 h-4" /> Connect
                   </Button>
                 ) : (
@@ -110,7 +193,6 @@ const Index = () => {
               </CardContent>
             </Card>
           </section>
-
           {/* Drive Controls - Joystick only */}
           <section className="flex flex-row grow">
             <Card className="grow border-0 shadow-xl bg-card/70 backdrop-blur-sm">
@@ -120,22 +202,13 @@ const Index = () => {
                     <h2 className="text-xl font-semibold">Sport Joystick</h2>
                     <p className="text-sm text-muted-foreground">Steer and throttle with a single control</p>
                   </div>
-
                   {/* Central Joystick */}
                   <div className="animate-enter">
                     <Joystick
                       size={220}
-                      onChange={({ x, y }) => {
-                        const s = Math.max(-1, Math.min(1, x));
-                        const t = Math.max(-1, Math.min(1, -y));
-                        setSteering(s);
-                        setThrottle(t);
-                        lastCmdRef.current.steering = s;
-                        lastCmdRef.current.throttle = t;
-                      }}
+                      onChange={handleJoystickChange}
                     />
                   </div>
-
                   {/* Live readouts */}
                   <div className="flex items-center gap-4 text-sm">
                     <div className="px-3 py-1 rounded-md border bg-secondary/50">
@@ -151,7 +224,6 @@ const Index = () => {
               </CardContent>
             </Card>
           </section>
-
           {/* Aux controls */}
           <section>
             <Card className="border-0 shadow-lg bg-card/60 backdrop-blur-sm">
@@ -163,11 +235,8 @@ const Index = () => {
                     className="w-1/2 gap-2 px-6 cursor-pointer"
                     onClick={() => setHeadlights(!headlights)}
                   >
-                    <Lightbulb className={`w-5 h-5 ${headlights ? "text-foreground" : "text-primary"}`} aria-hidden="true" />
-                    <div className="flex flex-row grow justify-between">
-                      <span className="font-medium text-sm">Headlights</span>
-                      <Switch checked={headlights} onCheckedChange={setHeadlights} aria-label="Toggle headlights" />
-                    </div>
+                    <Lightbulb className="w-5 h-5 text-foreground" aria-hidden="true" />
+                    Headlights
                   </Button>
 
                   <Button
@@ -192,5 +261,4 @@ const Index = () => {
     </div>
   );
 };
-
 export default Index;

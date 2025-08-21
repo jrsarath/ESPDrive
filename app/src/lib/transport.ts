@@ -1,3 +1,26 @@
+// Extend global Navigator type for Web Bluetooth API
+declare global {
+  interface Navigator {
+    bluetooth: {
+      requestDevice(options: RequestDeviceOptions): Promise<BluetoothDevice>;
+    };
+  }
+  interface RequestDeviceOptions {
+    acceptAllDevices?: boolean;
+    filters?: Array<any>;
+    optionalServices?: Array<string>;
+  }
+}
+// Type declaration for BluetoothDevice (Web Bluetooth API)
+declare interface BluetoothDevice {
+  gatt?: BluetoothRemoteGATTServer;
+  id: string;
+  name?: string;
+  // Add more properties as needed
+}
+declare interface BluetoothRemoteGATTServer {
+  disconnect(): void;
+}
 export type RcCommand = {
   throttle: number; // -1..1 forward/back
   steering: number; // -1..1 left/right

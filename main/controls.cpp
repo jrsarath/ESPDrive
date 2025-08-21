@@ -7,20 +7,17 @@
 extern Motor gMotor;
 extern Servo gServo;
 
-esp_err_t forward() {
-    // led_status_blink(0, 255, 0, 3, 500);
+esp_err_t forward(int speed) {
     set_vehicle_lights(NORMAL);
-    gMotor.forward(200);
+    gMotor.forward(speed);
     return ESP_OK;
 }
-esp_err_t reverse() {
-    // led_status_blink(255, 255, 255, 3, 500);
+esp_err_t reverse(int speed) {
     set_vehicle_lights(REVERSING);
-    gMotor.reverse(200);
+    gMotor.reverse(speed);
     return ESP_OK;
 }
 esp_err_t stop() {
-    // led_status_blink(255, 0, 0, 3, 500);
     set_vehicle_lights(BRAKING);
     gMotor.stop();
     return ESP_OK;

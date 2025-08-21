@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-esp_err_t forward();
-esp_err_t reverse();
+esp_err_t forward(int value);
+esp_err_t reverse(int value);
 esp_err_t stop();
 esp_err_t left();
 esp_err_t right();
