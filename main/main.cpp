@@ -6,6 +6,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_spiffs.h"
+#include <dirent.h>
 
 static constexpr int STBY_PIN = 19;
 static constexpr int BIN1_PIN = 20;
@@ -29,6 +31,31 @@ extern void start_webserver();
 extern "C" void app_main(void) {
     esp_log_level_set("*", ESP_LOG_INFO);
     ESP_LOGI(TAG, "Starting ESP Car");
+
+    // Mount SPIFFS
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+    esp_vfs_spiffs_register(&conf);
+
+    DIR* dir = opendir("/spiffs");
+    if (dir == NULL) {
+        return;
+    }
+
+    while (true) {
+        struct dirent* de = readdir(dir);
+        if (!de) {
+            break;
+        }
+        
+        printf("Found file: %s\n", de->d_name);
+    }
+
+    closedir(dir);
 
     // Initialize external 4 LED strip
     external_strip_init(NEOPIXEL_PIN, 4);
